@@ -29,7 +29,7 @@ LABEL2IDS = {
     'frasiers_dolphin': 25
 }
 
-config = Namespace(
+train_config = Namespace(
     # DATA
     train_img_path = '../128x128/train_images-128-128/train_images-128-128',
     labels = LABEL2IDS,
@@ -43,7 +43,7 @@ config = Namespace(
     
     # TRAIN
     batch_size = 256, # can I try 256
-    epochs = 1, # default 30
+    epochs = 30, # default 30
     early_patience = 6,
     rlrp_factor = 0.2,
     rlrp_patience = 3,
@@ -52,8 +52,38 @@ config = Namespace(
     model_save_path = '../models',
     
     # EMBEDDING
-    embedding_save_path = '../embeddings'
+    embedding_save_path = '../embeddings',
+    
+    # ARCFACE
+    use_arcface = False,
+    
+    # Augmentation
+    use_augmentations = True
 )
 
-def get_config():
-    return config
+test_config = Namespace(
+    # DATA
+    test_img_path = '../128x128/test_images-128-128/test_images-128-128',
+    labels = LABEL2IDS,
+    num_labels = len(LABEL2IDS),
+    image_height = 128,
+    image_width = 128,
+    resize=False,
+    batch_size = 256, # can I try 256
+    
+    # CROSS VALIDATION
+    num_folds = 5,
+    
+    # MODEL
+    model_save_path = '../models',
+    
+    # EMBEDDING
+    embedding_save_path = '../embeddings'
+) 
+    
+
+def get_train_config():
+    return train_config
+
+def get_test_config():
+    return test_config

@@ -1,3 +1,5 @@
+import random
+import string
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
@@ -37,3 +39,6 @@ class ShowBatch():
             if type=='train_val':
                 plt.title(self.get_label_name(label_batch[n].numpy()))
             plt.axis('off')
+            
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
