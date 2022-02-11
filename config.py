@@ -78,7 +78,9 @@ test_config = Namespace(
     model_save_path = '../models',
     
     # EMBEDDING
-    embedding_save_path = '../embeddings'
+    embedding_save_path = '../embeddings',
+    
+    use_augmentations = False
 ) 
     
 

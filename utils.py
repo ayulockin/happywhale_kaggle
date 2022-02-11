@@ -17,7 +17,7 @@ def get_stratified_k_fold(df, target, num_folds):
     kfold = StratifiedKFold(num_folds, shuffle=True, random_state=42)
 
     for fold, (train_indices, valid_indices) in enumerate(kfold.split(df, target)):
-        df.loc[valid_indices, 'fold'] = fold
+        df.loc[valid_indices, 'fold'] = int(fold)
         
     return df
 
