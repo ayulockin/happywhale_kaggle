@@ -4,7 +4,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import models
 
 
-class SimpleSupervisedtModel():
+class SimpleSupervisedModel():
     def __init__(self, args):
         self.args = args
         

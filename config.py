@@ -80,6 +80,8 @@ test_config = Namespace(
     # EMBEDDING
     embedding_save_path = '../embeddings',
     
+    use_arcface = False,
+    
     use_augmentations = False
 ) 
     
