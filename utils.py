@@ -3,6 +3,7 @@ import string
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
+import tensorflow as tf
 
 
 def get_stratified_k_fold(df, target, num_folds):
@@ -42,3 +43,20 @@ class ShowBatch():
             
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
+def setup_tpu():
+    try:
+        tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
+        print('Running on TPU ', tpu.master())
+    except ValueError:
+        tpu = None
+
+    if tpu:
+        tf.config.experimental_connect_to_cluster(tpu)
+        tf.tpu.experimental.initialize_tpu_system(tpu)
+        strategy = tf.distribute.TPUStrategy(tpu)
+    else:
+        # Default distribution strategy in Tensorflow. Works on CPU and single GPU.
+        strategy = tf.distribute.get_strategy()
+
+    print("REPLICAS: ", strategy.num_replicas_in_sync)
