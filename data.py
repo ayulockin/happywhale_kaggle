@@ -131,4 +131,4 @@ class GetDataloader():
         aug_data = self.transform(**data)
         aug_img = aug_data["image"]
 
-        return aug_img.astype(np.float32) 
+        return aug_img.astype(np.float32)

@@ -1,3 +1,4 @@
+import re
 import random
 import string
 import numpy as np
@@ -44,7 +45,8 @@ class ShowBatch():
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-def setup_tpu():
+def setup_device():
+    "Setup device - GPU or TPU"
     try:
         tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
         print('Running on TPU ', tpu.master())
@@ -55,8 +57,18 @@ def setup_tpu():
         tf.config.experimental_connect_to_cluster(tpu)
         tf.tpu.experimental.initialize_tpu_system(tpu)
         strategy = tf.distribute.TPUStrategy(tpu)
+        print('#### TPU Available ####')
     else:
         # Default distribution strategy in Tensorflow. Works on CPU and single GPU.
         strategy = tf.distribute.get_strategy()
+        if tf.config.list_physical_devices('GPU'):
+            print('#### GPU Available ####')
+            # TODO - Which GPU?
+    
+    return strategy
 
-    print("REPLICAS: ", strategy.num_replicas_in_sync)
+def count_data_items(filenames):
+    "Count the number of samples in a TFRecord dataset."
+    n = [int(re.compile(r"-([0-9]*)\.").search(filename).group(1)) 
+         for filename in filenames]
+    return np.sum(n)
