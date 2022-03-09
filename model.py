@@ -2,6 +2,10 @@ import math
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import models
+import tensorflow_hub as tfhub
+import tensorflow_addons as tfa
+
+import efficientnet.tfkeras as efn
 
 
 class SimpleSupervisedModel():
@@ -100,35 +104,57 @@ class ArcMarginProduct(tf.keras.layers.Layer):
 class ArcFaceSupervisedModel():
     def __init__(self, args):
         self.args = args
+        self.EFNS = [efn.EfficientNetB0, efn.EfficientNetB1, efn.EfficientNetB2, efn.EfficientNetB3, 
+                     efn.EfficientNetB4, efn.EfficientNetB5, efn.EfficientNetB6, efn.EfficientNetB7]
         
-    def get_efficientnet(self):
-        """
-        Get arcface based efficientnet model
-        """
-        # Base model
-        base_model = tf.keras.applications.EfficientNetB0(include_top=False, weights='imagenet')
-        base_model.trainabe = True
+    def build_model(self):
+        if self.args.use_arcface:
+            head = ArcMarginProduct
+        else:
+            assert 1==2, "Turn use_arcface=True"
+            
+        with self.args.strategy.scope():
+            margin = head(
+                n_classes = self.args.num_labels, 
+                s = 30,
+                m = 0.3, 
+                name=f'head-arcface', 
+                dtype='float32'
+            )
 
-        # Initialize ArcFace layer
-        margin = ArcMarginProduct(
-            n_classes = self.args.num_labels, 
-            s = 30, 
-            m = 0.3, 
-            name='arcface', 
-            dtype='float32'
-        )
+            inp = tf.keras.layers.Input(shape=(self.args.image_height, self.args.image_width, 3), name = 'inp1')
+            label = tf.keras.layers.Input(shape=(), name = 'inp2')
+
+            x = self.EFNS[self.args.effnet_num](weights='noisy-student', include_top = False)(inp)
+            embed = tf.keras.layers.GlobalAveragePooling2D()(x)
+            embed = tf.keras.layers.Dropout(0.2)(embed)
+            embed = tf.keras.layers.Dense(512)(embed)
+            x = margin([embed, label])
+
+            output = tf.keras.layers.Softmax(dtype='float32')(x)
+
+            model = tf.keras.models.Model(inputs = [inp, label], outputs = [output])
+            embed_model = tf.keras.models.Model(inputs = inp, outputs = embed)  
+
+            opt = tf.keras.optimizers.Adam(learning_rate=self.args.learning_rate)
+            if self.args.freeze_batchnorm:
+                self.freeze_batchnorm(model)
+
+            model.compile(
+                optimizer = opt,
+                loss = [tf.keras.losses.SparseCategoricalCrossentropy()],
+                metrics = [tf.keras.metrics.SparseCategoricalAccuracy(),tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5)]
+                ) 
+
+        return model, embed_model
         
-        img_inputs = layers.Input((self.args.image_height, self.args.image_width, 3), name='img_input')
-        label_inputs = layers.Input(shape=(), name='label_input')
-        
-        x = base_model(img_inputs, training=True)
-        embed = layers.GlobalAveragePooling2D()(x)
-        x = margin([embed, label_inputs])
-        
-        x = layers.Dropout(0.5)(x)
-        output = layers.Softmax(dtype='float32')(x)
-        
-        return models.Model(inputs=[img_inputs, label_inputs], outputs=[output])
+    def freeze_batchnorm(self, model):
+        # Unfreeze layers while leaving BatchNorm layers frozen
+        for layer in model.layers:
+            if not isinstance(layer, tf.keras.layers.BatchNormalization):
+                layer.trainable = True
+            else:
+                layer.trainable = False
 
 
 def get_feature_extractor(model, get_embedding_from='global_average_pooling2d'):     

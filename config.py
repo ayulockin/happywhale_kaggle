@@ -30,6 +30,9 @@ LABEL2IDS = {
 }
 
 train_config = Namespace(
+    # SEED
+    seed = 42, 
+    
     # DATA
     train_img_path = '../128x128/train_images-128-128/train_images-128-128',
     labels = LABEL2IDS,
@@ -47,15 +50,20 @@ train_config = Namespace(
     early_patience = 6,
     rlrp_factor = 0.2,
     rlrp_patience = 3,
+    learning_rate = 1e-3,
+    resume = False,
     
     # MODEL
     model_save_path = '../models',
+    model_type = 'effnetv1', # 'effnetv2'
+    effnet_num = 1,
+    freeze_batchnorm = True,
     
     # EMBEDDING
     embedding_save_path = '../embeddings',
     
     # ARCFACE
-    use_arcface = False,
+    use_arcface = True,
     
     # Augmentation
     use_augmentations = True
